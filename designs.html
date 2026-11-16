@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mood tracker — design directions</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+    :root { color-scheme: light; --ink:#17211e; --muted:#707873; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:#f3f3ef; color:var(--ink); font-family:'DM Sans',sans-serif; }
+    .intro { max-width:1500px; margin:auto; padding:48px 42px 30px; display:flex; align-items:end; justify-content:space-between; gap:24px; }
+    .eyebrow { color:#758079; text-transform:uppercase; letter-spacing:.15em; font-size:11px; font-weight:700; }
+    h1 { font-size:clamp(30px,4vw,50px); line-height:1.02; letter-spacing:-.045em; margin:12px 0 10px; }
+    .intro p { color:#69736d; margin:0; font-size:15px; }
+    .fake-label { flex:none; background:#e5e7df; color:#606b63; padding:9px 12px; border-radius:99px; font:500 11px 'DM Mono',monospace; letter-spacing:.03em; }
+    .board { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; max-width:1500px; margin:auto; padding:10px 42px 50px; align-items:start; }
+    .concept { min-width:0; }
+    .concept-head { display:flex; justify-content:space-between; align-items:baseline; padding:0 2px 12px; }
+    .concept-head h2 { font-size:13px; letter-spacing:.01em; margin:0; }
+    .concept-head span { color:#828a83; font:11px 'DM Mono',monospace; }
+    .screen { min-height:670px; padding:22px; border-radius:18px; overflow:hidden; box-shadow:0 7px 30px #22220c0b; }
+    .screen button, .screen input { font:inherit; }
+    .screen button { cursor:default; }
+    .micro { font:10px 'DM Mono',monospace; letter-spacing:.12em; text-transform:uppercase; }
+
+    /* 01 — quiet, paper-like journal */
+    .paper { background:#fffdf8; color:#2d382f; border:1px solid #e8e5db; font-family:'DM Sans',sans-serif; }
+    .paper-top { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e8e4d9; padding-bottom:15px; }
+    .wordmark { font:19px 'DM Serif Display',serif; letter-spacing:-.02em; }
+    .icon-btn { border:1px solid #e7e4da; background:transparent; height:31px; width:31px; border-radius:50%; color:#69756b; }
+    .paper-date { margin:24px 0 4px; color:#878c7f; }
+    .paper h3 { font:30px 'DM Serif Display',serif; letter-spacing:-.035em; margin:5px 0 19px; }
+    .paper-form { padding:16px; background:#f4f3e9; border-radius:12px; }
+    .form-label { display:flex; justify-content:space-between; font-size:12px; font-weight:600; }
+    .form-label small { color:#848a7f; font-weight:400; }
+    .number-row { display:grid; grid-template-columns:repeat(10,1fr); gap:4px; margin:10px 0 9px; }
+    .number-row span { border:1px solid #dedfd1; border-radius:7px; text-align:center; padding:7px 0; color:#667166; font-size:11px; background:#fffdf8; }
+    .number-row span.selected { background:#496856; color:white; border-color:#496856; }
+    .ends { display:flex; justify-content:space-between; color:#878c7f; font-size:10px; }
+    .note-line { margin-top:14px; padding:10px 0; color:#989c91; border-bottom:1px solid #dddfd2; font-size:12px; }
+    .save-row { display:flex; align-items:center; justify-content:space-between; margin-top:14px; }
+    .save-row small { color:#81897c; font-size:10px; }
+    .save { background:#496856; color:#fff; border:0; padding:9px 15px; border-radius:7px; font-size:11px!important; }
+    .today-title { display:flex; justify-content:space-between; align-items:center; margin:24px 0 9px; }
+    .today-title strong { font:17px 'DM Serif Display',serif; }
+    .today-title a { color:#617866; font-size:10px; }
+    .entry { display:grid; grid-template-columns:34px 1fr auto; gap:10px; align-items:center; padding:12px 0; border-top:1px solid #eeece4; }
+    .entry-score { font:18px 'DM Serif Display',serif; color:#456551; }
+    .entry-note { font-size:11px; color:#404a40; }
+    .entry-time { color:#92958b; font:10px 'DM Mono',monospace; }
+    .mini-calendar { margin-top:14px; border-top:1px solid #eeece4; padding-top:12px; display:flex; justify-content:space-between; align-items:center; color:#8a8d82; font-size:10px; }
+    .mini-calendar b { color:#617866; font-weight:600; }
+
+    /* 02 — high-contrast, data-forward */
+    .gridy { background:#17201e; color:#f3f4ec; font-family:'Space Grotesk',sans-serif; border:1px solid #26322f; }
+    .grid-top { display:flex; justify-content:space-between; align-items:center; }
+    .grid-logo { font-size:14px; font-weight:700; letter-spacing:-.04em; }
+    .grid-logo i { color:#b3f078; font-style:normal; }
+    .grid-date { color:#a6b0a9; margin:30px 0 5px; }
+    .gridy h3 { font-size:30px; letter-spacing:-.06em; margin:0 0 4px; }
+    .grid-sub { font-size:11px; color:#9ba7a0; margin:0 0 22px; }
+    .score-card { border:1px solid #34413c; background:#202a27; border-radius:13px; padding:16px; }
+    .score-head { display:flex; justify-content:space-between; align-items:center; font-size:12px; }
+    .score-head em { color:#b3f078; font:normal 10px 'DM Mono',monospace; }
+    .mood-face-dark { width:66px; height:66px; display:grid; place-items:center; margin:14px auto 8px; border-radius:20px; background:#34413a; font-size:35px; }
+    .mood-score-dark { text-align:center; color:#b3f078; font-size:15px; font-weight:700; }
+    .mood-score-dark span { color:#9aa59e; font-size:10px; font-weight:400; }
+    .mood-scale { display:grid; grid-template-columns:repeat(10,1fr); gap:4px; margin:13px 0 8px; }
+    .mood-scale span { padding:7px 0; border:1px solid #3c4942; border-radius:6px; color:#a8b2aa; background:#17201e; text-align:center; font-size:9px; }
+    .mood-scale span.selected { border-color:#b3f078; background:#b3f078; color:#1d281d; font-weight:700; }
+    .scale-end { display:flex; justify-content:space-between; color:#9ba59f; font-size:9px; }
+    .grid-input { background:#17201e; border:1px solid #3c4843; color:#84918a; border-radius:8px; padding:11px; font-size:11px; margin-top:14px; }
+    .grid-save { display:flex; align-items:center; justify-content:space-between; margin-top:14px; }
+    .grid-save small { color:#99a39d; font-size:9px; }
+    .lime-btn { border:0; border-radius:7px; background:#b3f078; color:#1d281d; padding:9px 13px; font-size:10px!important; font-weight:700; }
+    .history-head { display:flex; justify-content:space-between; margin:24px 0 10px; align-items:center; }
+    .history-head strong { font-size:13px; }
+    .history-head button { color:#b3f078; background:transparent; border:1px solid #455148; border-radius:6px; padding:6px 8px; font-size:9px!important; }
+    .dark-entry { display:grid; grid-template-columns:44px 1fr auto; align-items:center; gap:10px; border-top:1px solid #303a36; padding:12px 0; }
+    .dark-score { font-size:24px; color:#b3f078; font-weight:600; letter-spacing:-.06em; }
+    .dark-note { color:#dbe0d8; font-size:10px; }
+    .dark-meta { color:#8b9890; font:9px 'DM Mono',monospace; margin-top:4px; }
+    .spark { display:flex; height:48px; align-items:end; gap:5px; border-top:1px solid #303a36; padding-top:10px; margin-top:6px; }
+    .spark i { display:block; flex:1; background:#78995d; border-radius:3px 3px 0 0; opacity:.85; }
+    .spark i:nth-child(1){height:42%}.spark i:nth-child(2){height:67%}.spark i:nth-child(3){height:54%}.spark i:nth-child(4){height:81%}.spark i:nth-child(5){height:62%}.spark i:nth-child(6){height:75%}.spark i:nth-child(7){height:66%}
+
+    /* 03 — bright, friendly, expressive */
+    .play { background:#f7ede6; color:#302830; font-family:'Manrope',sans-serif; border:1px solid #efddd2; }
+    .play-top { display:flex; justify-content:space-between; align-items:center; }
+    .play-brand { font-size:15px; font-weight:800; letter-spacing:-.06em; }
+    .play-brand span { color:#ef745d; }
+    .avatar { width:29px; height:29px; border-radius:50%; display:grid; place-items:center; background:#f4c7a9; font-size:12px; }
+    .greeting { margin:26px 0 16px; }
+    .greeting .micro { color:#a27a69; }
+    .play h3 { font-size:27px; line-height:1.1; letter-spacing:-.07em; margin:6px 0 0; }
+    .bubble { background:#fffaf5; border-radius:17px; padding:16px; box-shadow:0 4px 12px #6c372011; }
+    .bubble-label { display:flex; justify-content:space-between; font-size:11px; font-weight:700; }
+    .bubble-label span { color:#aa8b7e; font-weight:500; }
+    .mood-face { width:72px; height:72px; display:grid; place-items:center; border-radius:24px; background:#fae3a6; font-size:38px; margin:14px auto 10px; transform:rotate(-4deg); }
+    .play-score { text-align:center; font-weight:800; font-size:15px; letter-spacing:-.04em; }
+    .play-score small { color:#9c8a80; font-size:10px; font-weight:500; }
+    .chips { display:flex; justify-content:space-between; gap:3px; margin-top:13px; }
+    .chips span { height:26px; min-width:22px; flex:1; display:grid; place-items:center; border-radius:8px; color:#86796f; background:#f4eee7; font-size:9px; }
+    .chips span.on { background:#ef745d; color:#fff; font-weight:800; }
+    .play-note { border:1px dashed #e2c7b8; padding:10px; border-radius:10px; color:#ad9588; font-size:10px; margin-top:12px; }
+    .play-submit { display:flex; justify-content:space-between; align-items:center; margin-top:13px; }
+    .play-submit small { color:#a38d81; font-size:9px; }
+    .coral-btn { border:0; border-radius:99px; background:#ef745d; color:white; padding:9px 14px; font-size:10px!important; font-weight:700; }
+    .streak { margin:17px 0 13px; border-radius:12px; background:#ead6cd; display:flex; justify-content:space-between; align-items:center; padding:11px 13px; }
+    .streak strong { font-size:11px; }
+    .streak span { font-size:10px; color:#8d6458; }
+    .recent-top { display:flex; justify-content:space-between; align-items:center; margin:18px 0 8px; }
+    .recent-top strong { font-size:12px; }
+    .recent-top a { color:#bd5a49; font-size:9px; }
+    .play-entry { display:grid; grid-template-columns:34px 1fr auto; gap:9px; align-items:center; border-top:1px solid #e7d5cb; padding:11px 0; }
+    .emoji { width:31px; height:31px; border-radius:11px; display:grid; place-items:center; background:#f8d9c7; font-size:16px; }
+    .play-entry:nth-of-type(2) .emoji { background:#fae5a8; }
+    .play-entry strong { display:block; font-size:10px; }
+    .play-entry small { display:block; color:#9c887e; font-size:9px; margin-top:3px; }
+    .pillscore { background:#fff8f1; color:#bd5a49; padding:5px 7px; border-radius:8px; font-size:10px; font-weight:800; }
+
+    @media (max-width:1050px) { .board { grid-template-columns:1fr; max-width:640px; } .screen { min-height:auto; } .intro { max-width:640px; } }
+    @media (max-width:600px) { .intro { padding:30px 19px 20px; align-items:start; flex-direction:column; } .board { padding:8px 19px 32px; gap:25px; } .screen { padding:19px; } }
+  </style>
+</head>
+<body>
+  <header class="intro">
+    <div>
+      <div class="eyebrow">Mood tracker · design exploration</div>
+      <h1>Three ways to check in.</h1>
+      <p>Three different visual directions for the same simple daily ritual.</p>
+    </div>
+    <div class="fake-label">CONCEPTS · ALL ENTRIES ARE FAKE</div>
+  </header>
+
+  <main class="board">
+    <section class="concept" aria-labelledby="concept-one">
+      <div class="concept-head"><h2 id="concept-one">01 / The quiet journal</h2><span>calm · paper-like</span></div>
+      <div class="screen paper">
+        <div class="paper-top"><div class="wordmark">little by little</div><button class="icon-btn" aria-label="Calendar">▦</button></div>
+        <div class="paper-date micro">MONDAY · OCTOBER 19</div>
+        <h3>How are you<br>feeling today?</h3>
+        <div class="paper-form">
+          <div class="form-label">Your mood <small>choose 1–10</small></div>
+          <div class="number-row"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span class="selected">7</span><span>8</span><span>9</span><span>10</span></div>
+          <div class="ends"><span>Very bad</span><span>Very good</span></div>
+          <div class="note-line">Add a note (optional)…</div>
+          <div class="save-row"><small>Saved just for you</small><button class="save">Save check-in</button></div>
+        </div>
+        <div class="today-title"><strong>Today so far</strong><a>View calendar →</a></div>
+        <div class="entry"><div class="entry-score">6</div><div class="entry-note">A slow start, but a good walk helped.</div><div class="entry-time">9:15</div></div>
+        <div class="entry"><div class="entry-score">7</div><div class="entry-note">Feeling more settled after lunch.</div><div class="entry-time">1:40</div></div>
+        <div class="mini-calendar"><span>YOUR LAST 7 DAYS</span><span>12 · 13 · 14 · 15 · 16 · 17 · <b>18</b></span></div>
+      </div>
+    </section>
+
+    <section class="concept" aria-labelledby="concept-two">
+      <div class="concept-head"><h2 id="concept-two">02 / The clear dashboard</h2><span>focused · high contrast</span></div>
+      <div class="screen gridy">
+        <div class="grid-top"><div class="grid-logo">mood<i>/log</i></div><div class="micro" style="color:#95a199">LOCAL ONLY · ▦</div></div>
+        <div class="grid-date micro">MON, OCT 19, 2026</div>
+        <h3>Daily check-in</h3>
+        <p class="grid-sub">A small moment to notice how things feel.</p>
+        <div class="score-card">
+          <div class="score-head"><strong>Pick your mood</strong><em>GOOD</em></div>
+          <div class="mood-face-dark">🙂</div>
+          <div class="mood-score-dark">7 <span>out of 10</span></div>
+          <div class="mood-scale"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span class="selected">7</span><span>8</span><span>9</span><span>10</span></div>
+          <div class="scale-end"><span>Very bad</span><span>Very good</span></div>
+          <div class="grid-input">Add a note if you like…</div>
+          <div class="grid-save"><small>Multiple check-ins are okay</small><button class="lime-btn">＋ &nbsp;Save entry</button></div>
+        </div>
+        <div class="history-head"><strong>Today’s entries <span style="color:#93a097;font-weight:400">(2)</span></strong><button>OPEN CALENDAR ↗</button></div>
+        <div class="dark-entry"><div class="dark-score">6</div><div><div class="dark-note">A bit tired, but got outside.</div><div class="dark-meta">09:15 AM · EDIT</div></div><div class="micro" style="color:#77857c">•••</div></div>
+        <div class="dark-entry"><div class="dark-score">7</div><div><div class="dark-note">Lunch with Sam lifted my mood.</div><div class="dark-meta">01:40 PM · EDIT</div></div><div class="micro" style="color:#77857c">•••</div></div>
+        <div class="history-head" style="margin:17px 0 2px"><strong style="font-size:10px;color:#a7b0a9">RECENT MOOD</strong><span class="micro" style="color:#7f8b83">LAST 7 DAYS</span></div>
+        <div class="spark" aria-label="Decorative fake seven day mood chart"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
+    </section>
+
+    <section class="concept" aria-labelledby="concept-three">
+      <div class="concept-head"><h2 id="concept-three">03 / The friendly companion</h2><span>bright · expressive</span></div>
+      <div class="screen play">
+        <div class="play-top"><div class="play-brand">mood<span>dot</span></div><div class="avatar">☀</div></div>
+        <div class="greeting"><div class="micro">MONDAY, OCTOBER 19</div><h3>Hey there.<br>How’s your day?</h3></div>
+        <div class="bubble">
+          <div class="bubble-label">Pick your mood <span>1 = very bad · 10 = very good</span></div>
+          <div class="mood-face">🙂</div>
+          <div class="play-score">7 <small>out of 10</small></div>
+          <div class="chips"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span class="on">7</span><span>8</span><span>9</span><span>10</span></div>
+          <div class="play-note">Anything on your mind? (optional)</div>
+          <div class="play-submit"><small>Only saved in this browser</small><button class="coral-btn">Save my mood ↗</button></div>
+        </div>
+        <div class="streak"><strong>Two check-ins today</strong><span>Nice job noticing ☼</span></div>
+        <div class="recent-top"><strong>Your check-ins</strong><a>Pick a past date →</a></div>
+        <div class="play-entry"><div class="emoji">🌤️</div><div><strong>Steadier after a walk</strong><small>Today · 9:15 am</small></div><div class="pillscore">6 / 10</div></div>
+        <div class="play-entry"><div class="emoji">🙂</div><div><strong>Lunch made me smile</strong><small>Today · 1:40 pm</small></div><div class="pillscore">7 / 10</div></div>
+        <div class="play-entry"><div class="emoji">🌿</div><div><strong>A quiet evening</strong><small>Yesterday · 8:05 pm</small></div><div class="pillscore">8 / 10</div></div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

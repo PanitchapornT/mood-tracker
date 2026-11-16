@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#17201e">
+  <title>Mood / Log</title>
+  <style>
+    :root { color-scheme:dark; --bg:#111816; --panel:#17201e; --card:#202a27; --line:#34413c; --text:#f3f4ec; --muted:#9ba7a0; --lime:#b3f078; --danger:#ff8d7c; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    button,input,textarea { font:inherit; }
+    button { cursor:pointer; }
+    .app { width:min(100% - 36px,600px); margin:0 auto; padding:28px 0 56px; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; padding-bottom:17px; border-bottom:1px solid #29332f; }
+    .brand { color:var(--text); text-decoration:none; font-size:16px; font-weight:750; letter-spacing:-.06em; }
+    .brand i { color:var(--lime); font-style:normal; }
+    .privacy { color:var(--muted); font-size:10px; letter-spacing:.04em; display:flex; align-items:center; gap:7px; }
+    .privacy::before { content:""; width:7px; height:7px; border-radius:50%; background:var(--lime); }
+    .heading-row { display:flex; align-items:end; justify-content:space-between; gap:14px; margin:30px 0 20px; }
+    .date-label { color:var(--muted); font-size:10px; font-weight:650; letter-spacing:.13em; text-transform:uppercase; }
+    h1 { margin:7px 0 0; font-size:32px; line-height:1.05; letter-spacing:-.065em; }
+    .date-tools { display:flex; align-items:center; gap:7px; }
+    .date-tools input { width:158px; height:38px; padding:0 9px; border:1px solid var(--line); border-radius:9px; background:var(--card); color:var(--text); }
+    .date-tools input::-webkit-calendar-picker-indicator { cursor:pointer; opacity:.85; }
+    .today-btn,.quiet-btn { padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:transparent; color:#c8d0c9; font-size:11px; }
+    .card { padding:19px; border:1px solid var(--line); border-radius:14px; background:var(--card); }
+    .card-head { display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:13px; font-weight:700; }
+    .mood-tag { color:var(--lime); font:10px ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.1em; }
+    .emoji-display { display:grid; place-items:center; width:74px; height:74px; margin:17px auto 9px; border:1px solid #3a4941; border-radius:23px; background:#2a3731; font-size:39px; transition:transform .15s ease; }
+    .emoji-display.pop { transform:scale(1.08); }
+    .score-readout { text-align:center; color:var(--lime); font-size:16px; font-weight:750; }
+    .score-readout small { color:var(--muted); font-size:11px; font-weight:450; }
+    .scale { display:grid; grid-template-columns:repeat(10,minmax(0,1fr)); gap:5px; margin:15px 0 9px; }
+    .scale button { min-width:0; padding:8px 0; border:1px solid #3c4942; border-radius:7px; background:#17201e; color:#b4beb6; font-size:11px; transition:background .12s,border-color .12s,color .12s; }
+    .scale button:hover { border-color:#829377; }
+    .scale button[aria-pressed="true"] { border-color:var(--lime); background:var(--lime); color:#1d281d; font-weight:750; }
+    .scale-ends { display:flex; justify-content:space-between; color:var(--muted); font-size:10px; }
+    .field-label { display:block; margin:17px 0 7px; color:#dfe4dd; font-size:11px; font-weight:600; }
+    .optional { color:var(--muted); font-weight:400; }
+    textarea { display:block; width:100%; min-height:69px; resize:vertical; padding:11px 12px; border:1px solid #3c4942; border-radius:8px; outline:none; background:#17201e; color:var(--text); font-size:12px; line-height:1.45; }
+    textarea::placeholder { color:#7e8a82; }
+    textarea:focus,input:focus-visible,button:focus-visible { outline:2px solid var(--lime); outline-offset:2px; }
+    .form-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:14px; }
+    .form-hint { color:var(--muted); font-size:10px; line-height:1.4; }
+    .primary { border:0; border-radius:8px; padding:10px 14px; background:var(--lime); color:#1d281d; font-size:11px; font-weight:750; }
+    .primary:hover { background:#c3fa91; }
+    .cancel-edit { margin-left:6px; }
+    .notice { min-height:18px; margin:10px 2px 0; color:var(--muted); font-size:11px; }
+    .notice.error { color:#ffad9e; }
+    .weekly-card { display:flex; align-items:center; justify-content:space-between; gap:18px; margin-top:17px; padding:15px 17px; border:1px solid #39463f; border-radius:12px; background:linear-gradient(110deg,#202a27,#1b2521); }
+    .weekly-copy .overline { color:var(--lime); font:9px ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.13em; }
+    .weekly-copy h2 { margin:6px 0 4px; font-size:14px; letter-spacing:-.025em; }
+    .weekly-copy p { margin:0; color:var(--muted); font-size:10px; line-height:1.45; }
+    .weekly-value { flex:none; min-width:75px; text-align:right; }
+    .weekly-value strong { color:var(--lime); font-size:31px; line-height:1; letter-spacing:-.07em; }
+    .weekly-value span { color:#aab5ad; font-size:10px; }
+    .weekly-value small { display:block; margin-top:5px; color:var(--muted); font-size:9px; }
+    .section-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:27px 1px 10px; }
+    .section-head h2 { margin:0; font-size:14px; letter-spacing:-.02em; }
+    .count { margin-left:4px; color:var(--muted); font-size:11px; font-weight:450; }
+    .empty { border:1px dashed #38443e; border-radius:11px; padding:20px 15px; color:var(--muted); font-size:12px; text-align:center; }
+    .entries { display:grid; gap:8px; }
+    .entry { display:grid; grid-template-columns:42px minmax(0,1fr) auto; gap:11px; align-items:center; padding:13px 12px; border:1px solid #2c3833; border-radius:10px; background:var(--panel); }
+    .entry-score { color:var(--lime); font-size:22px; font-weight:700; letter-spacing:-.06em; text-align:center; }
+    .entry-body { min-width:0; }
+    .entry-note { color:#e3e8e1; font-size:12px; line-height:1.4; overflow-wrap:anywhere; }
+    .entry-note.no-note { color:#97a39a; font-style:italic; }
+    .entry-time { margin-top:4px; color:#88968d; font:10px ui-monospace,SFMono-Regular,Menlo,monospace; }
+    .entry-actions { display:flex; gap:4px; }
+    .text-btn { border:0; background:transparent; color:#aab5ad; padding:7px 6px; font-size:10px; }
+    .text-btn:hover { color:var(--lime); }
+    .text-btn.delete:hover { color:var(--danger); }
+    .past-notice { margin-top:15px; padding:11px 12px; border-radius:9px; background:#202a27; color:#adb8af; font-size:11px; line-height:1.5; }
+    .past-notice button { margin-left:5px; padding:0; border:0; background:none; color:var(--lime); font-weight:650; }
+    .footer { margin-top:26px; padding-top:15px; border-top:1px solid #29332f; color:#78857d; font-size:10px; line-height:1.55; }
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    @media (max-width:480px) {
+      .app { width:min(100% - 26px,600px); padding-top:17px; }
+      .heading-row { align-items:start; flex-direction:column; }
+      .date-tools { align-self:stretch; justify-content:space-between; }
+      .date-tools input { width:100%; }
+      .scale { gap:3px; }
+      .scale button { font-size:10px; }
+      .card { padding:15px; }
+      .entry { grid-template-columns:35px minmax(0,1fr); }
+      .entry-actions { grid-column:2; justify-content:flex-start; margin-top:-5px; }
+      .text-btn { padding:4px 8px 2px 0; }
+    }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { transition:none!important; } }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <a class="brand" href="./design.html" aria-label="Mood log home">mood<i>/log</i></a>
+      <div class="privacy">Saved in this browser</div>
+    </header>
+
+    <section class="heading-row" aria-label="Selected date">
+      <div>
+        <div class="date-label" id="date-label"></div>
+        <h1 id="page-title">Daily check-in</h1>
+      </div>
+      <div class="date-tools">
+        <label class="sr-only" for="date-picker">Choose a date</label>
+        <input id="date-picker" type="date" aria-label="Choose a date to view entries">
+        <button class="today-btn" id="today-button" type="button">Today</button>
+      </div>
+    </section>
+
+    <section id="entry-form-card" class="card" aria-labelledby="form-title">
+      <div class="card-head"><strong id="form-title">Pick your mood</strong><span id="mood-tag" class="mood-tag">CHOOSE A SCORE</span></div>
+      <div id="emoji-display" class="emoji-display" aria-hidden="true">🙂</div>
+      <div id="score-readout" class="score-readout" aria-live="polite">— <small>out of 10</small></div>
+      <div id="score-options" class="scale" role="group" aria-label="Mood score from 1 to 10"></div>
+      <div class="scale-ends"><span>1 · Very bad</span><span>10 · Very good</span></div>
+      <label class="field-label" for="note-input">Note <span class="optional">(optional)</span></label>
+      <textarea id="note-input" maxlength="500" placeholder="Add a note if you like…"></textarea>
+      <div class="form-footer">
+        <span class="form-hint">You can add more than one check-in a day.</span>
+        <div><button id="cancel-edit" class="quiet-btn cancel-edit" type="button" hidden>Cancel</button><button id="save-button" class="primary" type="button">＋ &nbsp;Save entry</button></div>
+      </div>
+    </section>
+    <p id="status-message" class="notice" role="status" aria-live="polite"></p>
+
+    <section class="weekly-card" aria-labelledby="weekly-title">
+      <div class="weekly-copy">
+        <div class="overline">WEEKLY SUMMARY</div>
+        <h2 id="weekly-title">Average mood</h2>
+        <p id="week-range"></p>
+        <p id="weekly-caption">Based on all check-ins in the week.</p>
+      </div>
+      <div class="weekly-value"><strong id="weekly-average">—</strong><span> / 10</span><small id="weekly-count">0 check-ins</small></div>
+    </section>
+
+    <section aria-labelledby="entries-heading">
+      <div class="section-head"><h2 id="entries-heading">Today’s entries <span id="entry-count" class="count"></span></h2></div>
+      <div id="entries-list" class="entries"></div>
+    </section>
+
+    <footer class="footer">Your entries stay in this browser on this computer. They are not sent to a server. Clearing browser data or using another browser may remove or hide them.</footer>
+  </main>
+
+  <script src="./mood-utils.js"></script>
+  <script>
+    (() => {
+      "use strict";
+      const STORAGE_KEY = "mood-log.entries.v1";
+      const emojis = ["😞", "😣", "🙁", "😕", "😐", "🙂", "😊", "😄", "😁", "🤩"];
+      const labels = ["VERY LOW", "LOW", "LOW", "A LITTLE LOW", "OKAY", "GOOD", "GOOD", "VERY GOOD", "GREAT", "AMAZING"];
+      const datePicker = document.getElementById("date-picker");
+      const dateLabel = document.getElementById("date-label");
+      const pageTitle = document.getElementById("page-title");
+      const formCard = document.getElementById("entry-form-card");
+      const formTitle = document.getElementById("form-title");
+      const moodTag = document.getElementById("mood-tag");
+      const emojiDisplay = document.getElementById("emoji-display");
+      const scoreReadout = document.getElementById("score-readout");
+      const scoreOptions = document.getElementById("score-options");
+      const noteInput = document.getElementById("note-input");
+      const saveButton = document.getElementById("save-button");
+      const cancelEditButton = document.getElementById("cancel-edit");
+      const statusMessage = document.getElementById("status-message");
+      const entriesHeading = document.getElementById("entries-heading");
+      const entryCount = document.getElementById("entry-count");
+      const entriesList = document.getElementById("entries-list");
+      const todayButton = document.getElementById("today-button");
+      const weekRange = document.getElementById("week-range");
+      const weeklyAverageOutput = document.getElementById("weekly-average");
+      const weeklyCount = document.getElementById("weekly-count");
+      const weeklyCaption = document.getElementById("weekly-caption");
+
+      let entries = loadEntries();
+      let selectedScore = null;
+      let editingId = null;
+
+      function localDateKey(date = new Date()) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+
+      function loadEntries() {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (!saved) return [];
+          const parsed = JSON.parse(saved);
+          return Array.isArray(parsed) ? parsed.filter(isValidEntry) : [];
+        } catch (error) {
+          return [];
+        }
+      }
+
+      function isValidEntry(entry) {
+        return entry && typeof entry.id === "string" && /^\d{4}-\d{2}-\d{2}$/.test(entry.date) &&
+          Number.isInteger(entry.score) && entry.score >= 1 && entry.score <= 10 &&
+          typeof entry.note === "string" && typeof entry.createdAt === "string";
+      }
+
+      function persist() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+          statusMessage.textContent = "Saved in this browser.";
+          statusMessage.classList.remove("error");
+          return true;
+        } catch (error) {
+          statusMessage.textContent = "Could not save in this browser. Check that browser storage is available.";
+          statusMessage.classList.add("error");
+          return false;
+        }
+      }
+
+      function prettyDate(dateKey, options = { weekday: "long", month: "long", day: "numeric", year: "numeric" }) {
+        const [year, month, day] = dateKey.split("-").map(Number);
+        return new Intl.DateTimeFormat(undefined, options).format(new Date(year, month - 1, day));
+      }
+
+      function shortTime(isoString) {
+        const date = new Date(isoString);
+        if (Number.isNaN(date.getTime())) return "Time unavailable";
+        return new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(date);
+      }
+
+      function currentDateKey() { return localDateKey(); }
+
+      function setScore(score) {
+        selectedScore = score;
+        emojiDisplay.textContent = emojis[score - 1];
+        scoreReadout.innerHTML = `${score} <small>out of 10</small>`;
+        moodTag.textContent = labels[score - 1];
+        [...scoreOptions.children].forEach((button, index) => {
+          button.setAttribute("aria-pressed", String(index + 1 === score));
+        });
+        emojiDisplay.classList.remove("pop");
+        requestAnimationFrame(() => emojiDisplay.classList.add("pop"));
+        window.setTimeout(() => emojiDisplay.classList.remove("pop"), 170);
+      }
+
+      function clearForm() {
+        editingId = null;
+        selectedScore = null;
+        noteInput.value = "";
+        formTitle.textContent = "Pick your mood";
+        saveButton.innerHTML = "＋ &nbsp;Save entry";
+        cancelEditButton.hidden = true;
+        emojiDisplay.textContent = "🙂";
+        scoreReadout.innerHTML = "— <small>out of 10</small>";
+        moodTag.textContent = "CHOOSE A SCORE";
+        [...scoreOptions.children].forEach(button => button.setAttribute("aria-pressed", "false"));
+      }
+
+      function render() {
+        const chosenDate = datePicker.value || currentDateKey();
+        const isToday = chosenDate === currentDateKey();
+        const dayEntries = entries.filter(entry => entry.date === chosenDate)
+          .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        const week = window.MoodUtils.weeklyAverage(entries, chosenDate);
+
+        dateLabel.textContent = prettyDate(chosenDate, { weekday: "short", month: "short", day: "numeric", year: "numeric" }).toUpperCase();
+        pageTitle.textContent = isToday ? "Daily check-in" : "Past check-in";
+        weekRange.textContent = week.startDate
+          ? `${prettyDate(week.startDate, { month: "short", day: "numeric" })} – ${prettyDate(week.endDate, { month: "short", day: "numeric", year: "numeric" })}`
+          : "Week unavailable";
+        weeklyAverageOutput.textContent = week.average === null ? "—" : week.average.toFixed(1);
+        weeklyCount.textContent = `${week.count} ${week.count === 1 ? "check-in" : "check-ins"}`;
+        weeklyCaption.textContent = week.count
+          ? "Average of every saved score in this week."
+          : "Add a check-in this week to see your average.";
+        formCard.hidden = !isToday && !editingId;
+        todayButton.hidden = isToday;
+        entriesHeading.firstChild.textContent = isToday ? "Today’s entries " : "Entries ";
+        entryCount.textContent = `(${dayEntries.length})`;
+
+        entriesList.replaceChildren();
+        if (dayEntries.length === 0) {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = isToday ? "No check-ins yet today. Choose a score above to add your first." : "No entries for this date.";
+          entriesList.append(empty);
+        } else {
+          dayEntries.forEach(entry => entriesList.append(createEntryCard(entry)));
+        }
+
+        let pastHint = document.getElementById("past-notice");
+        if (!isToday && !pastHint) {
+          pastHint = document.createElement("div");
+          pastHint.id = "past-notice";
+          pastHint.className = "past-notice";
+          pastHint.append("Past entries can be changed or removed. To add a new check-in, ");
+          const back = document.createElement("button");
+          back.type = "button";
+          back.textContent = "go to today";
+          back.addEventListener("click", goToToday);
+          pastHint.append(back, ".");
+          entriesList.after(pastHint);
+        } else if (isToday && pastHint) {
+          pastHint.remove();
+        }
+      }
+
+      function createEntryCard(entry) {
+        const card = document.createElement("article");
+        card.className = "entry";
+        const score = document.createElement("div");
+        score.className = "entry-score";
+        score.textContent = String(entry.score);
+        score.setAttribute("aria-label", `Score ${entry.score} out of 10`);
+        const body = document.createElement("div");
+        body.className = "entry-body";
+        const note = document.createElement("div");
+        note.className = entry.note ? "entry-note" : "entry-note no-note";
+        note.textContent = entry.note || "No note";
+        const time = document.createElement("div");
+        time.className = "entry-time";
+        time.textContent = shortTime(entry.createdAt);
+        body.append(note, time);
+        const actions = document.createElement("div");
+        actions.className = "entry-actions";
+        const edit = document.createElement("button");
+        edit.type = "button";
+        edit.className = "text-btn";
+        edit.textContent = "Edit";
+        edit.setAttribute("aria-label", `Edit entry, score ${entry.score}, ${shortTime(entry.createdAt)}`);
+        edit.addEventListener("click", () => startEditing(entry));
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "text-btn delete";
+        remove.textContent = "Delete";
+        remove.setAttribute("aria-label", `Delete entry, score ${entry.score}, ${shortTime(entry.createdAt)}`);
+        remove.addEventListener("click", () => deleteEntry(entry));
+        actions.append(edit, remove);
+        card.append(score, body, actions);
+        return card;
+      }
+
+      function startEditing(entry) {
+        editingId = entry.id;
+        formCard.hidden = false;
+        formTitle.textContent = "Edit your check-in";
+        saveButton.textContent = "Save changes";
+        cancelEditButton.hidden = false;
+        noteInput.value = entry.note;
+        setScore(entry.score);
+        statusMessage.textContent = "Editing this entry. Its original time will be kept.";
+        formCard.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      function deleteEntry(entry) {
+        const confirmed = window.confirm(`Delete this mood entry (score ${entry.score}, ${shortTime(entry.createdAt)})? This cannot be undone.`);
+        if (!confirmed) return;
+        entries = entries.filter(item => item.id !== entry.id);
+        if (editingId === entry.id) clearForm();
+        if (persist()) {
+          statusMessage.textContent = "Entry deleted.";
+          render();
+        } else {
+          entries.push(entry);
+          render();
+        }
+      }
+
+      function saveEntry() {
+        if (!selectedScore) {
+          statusMessage.textContent = "Choose a mood score from 1 to 10 first.";
+          statusMessage.classList.add("error");
+          scoreOptions.querySelector("button")?.focus();
+          return;
+        }
+        const note = noteInput.value.trim();
+        if (editingId) {
+          const index = entries.findIndex(entry => entry.id === editingId);
+          if (index < 0) {
+            clearForm();
+            render();
+            return;
+          }
+          const before = entries[index];
+          entries[index] = { ...before, score: selectedScore, note };
+          if (!persist()) { entries[index] = before; return; }
+          clearForm();
+          statusMessage.textContent = "Changes saved.";
+        } else {
+          const entry = {
+            id: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+            date: currentDateKey(),
+            createdAt: new Date().toISOString(),
+            score: selectedScore,
+            note
+          };
+          entries.push(entry);
+          if (!persist()) { entries = entries.filter(item => item.id !== entry.id); return; }
+          clearForm();
+          statusMessage.textContent = "Entry saved.";
+        }
+        statusMessage.classList.remove("error");
+        render();
+      }
+
+      function goToToday() {
+        datePicker.value = currentDateKey();
+        clearForm();
+        statusMessage.textContent = "";
+        render();
+      }
+
+      for (let score = 1; score <= 10; score += 1) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = String(score);
+        button.setAttribute("aria-label", `${score} out of 10, ${labels[score - 1].toLowerCase()}`);
+        button.setAttribute("aria-pressed", "false");
+        button.addEventListener("click", () => setScore(score));
+        scoreOptions.append(button);
+      }
+
+      datePicker.value = currentDateKey();
+      datePicker.max = currentDateKey();
+      datePicker.addEventListener("change", () => {
+        clearForm();
+        statusMessage.textContent = "";
+        render();
+      });
+      todayButton.addEventListener("click", goToToday);
+      saveButton.addEventListener("click", saveEntry);
+      cancelEditButton.addEventListener("click", () => {
+        clearForm();
+        statusMessage.textContent = "Edit cancelled.";
+        statusMessage.classList.remove("error");
+        render();
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>
